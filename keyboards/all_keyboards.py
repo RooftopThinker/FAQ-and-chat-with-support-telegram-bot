@@ -52,9 +52,9 @@ def cancel():
     return keyboard
 
 
-def goods_faq():
-    buttons = [[types.InlineKeyboardButton(text='Дозатор', callback_data='faq_dispenser')],
-               [types.InlineKeyboardButton(text='Увлажнитель', callback_data='faq_humidifier')],
+def dispenser_or_humidifier():
+    buttons = [[types.InlineKeyboardButton(text='Дозатор', callback_data='dispenser')],
+               [types.InlineKeyboardButton(text='Увлажнитель', callback_data='humidifier')],
                [types.InlineKeyboardButton(text="Отмена", callback_data='cancel')]]
     keyboard = types.InlineKeyboardMarkup(inline_keyboard=buttons)
     return keyboard
@@ -79,3 +79,4 @@ def yes_or_no():
                [types.InlineKeyboardButton(text='Нет❌', callback_data='no')]]
     keyboard = types.InlineKeyboardMarkup(inline_keyboard=buttons)
     return keyboard
+
