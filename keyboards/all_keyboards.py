@@ -22,27 +22,9 @@ def approve_or_decline_subscription(user_id):
 
 def menu():
     buttons = [[types.KeyboardButton(text='Получить бонус')],
-               [types.KeyboardButton(text='Контакты')],
                [types.KeyboardButton(text='Вопросы')],
                [types.KeyboardButton(text='Проблемы с товаром')]]
     keyboard = types.ReplyKeyboardMarkup(resize_keyboard=True, keyboard=buttons, one_time_keyboard=True)
-    return keyboard
-
-
-def faq():
-    buttons = [[types.KeyboardButton(text='Получить бонус')],
-               [types.KeyboardButton(text='Контакты')],
-               [types.KeyboardButton(text='Вопросы')],
-               [types.KeyboardButton(text='Проблемы с товаром')]]
-    keyboard = types.ReplyKeyboardMarkup(resize_keyboard=True, keyboard=buttons, one_time_keyboard=True)
-    return keyboard
-
-
-def goods_problems():
-    buttons = [[types.InlineKeyboardButton(text='Дозатор', callback_data='problems_dispenser')],
-               [types.InlineKeyboardButton(text='Увлажнитель', callback_data='problems_humidifier')],
-               [types.InlineKeyboardButton(text="Отмена", callback_data='cancel')]]
-    keyboard = types.InlineKeyboardMarkup(inline_keyboard=buttons)
     return keyboard
 
 
@@ -69,7 +51,7 @@ def admin_menu():
 
 
 def cancel_admin():
-    buttons = [[types.InlineKeyboardButton(text="Отмена", callback_data='admin_cancel')]]
+    buttons = [[types.InlineKeyboardButton(text="Отмена", callbxack_data='admin_cancel')]]
     keyboard = types.InlineKeyboardMarkup(inline_keyboard=buttons)
     return keyboard
 
@@ -77,6 +59,44 @@ def cancel_admin():
 def yes_or_no():
     buttons = [[types.InlineKeyboardButton(text='Да✅', callback_data='yes')],
                [types.InlineKeyboardButton(text='Нет❌', callback_data='no')]]
+    keyboard = types.InlineKeyboardMarkup(inline_keyboard=buttons)
+    return keyboard
+
+
+def dispenser_problems():
+    buttons = [[types.InlineKeyboardButton(text='Проблема 1', callback_data='problem_1')],
+               [types.InlineKeyboardButton(text='Проблема 2', callback_data='problem_2')],
+               [types.InlineKeyboardButton(text='Проблема 3', callback_data='problem_3')],
+               [types.InlineKeyboardButton(text="Отмена", callback_data='cancel')]]
+    keyboard = types.InlineKeyboardMarkup(inline_keyboard=buttons)
+    return keyboard
+
+
+def humidifier_problems():
+    buttons = [[types.InlineKeyboardButton(text='Проблема 1', callback_data='problem_1')],
+               [types.InlineKeyboardButton(text='Проблема 2', callback_data='problem_2')],
+               [types.InlineKeyboardButton(text='Проблема 3', callback_data='problem_3')],
+               [types.InlineKeyboardButton(text='Проблема 4', callback_data='problem_4')],
+               [types.InlineKeyboardButton(text='Проблема 5', callback_data='problem_5')],
+               [types.InlineKeyboardButton(text="Отмена", callback_data='cancel')]]
+    keyboard = types.InlineKeyboardMarkup(inline_keyboard=buttons)
+    return keyboard
+
+
+def review_approved():
+    buttons = [[types.InlineKeyboardButton(text='Отзыв одобрен✅', callback_data='_')]]
+    keyboard = types.InlineKeyboardMarkup(inline_keyboard=buttons)
+    return keyboard
+
+
+def review_declined():
+    buttons = [[types.InlineKeyboardButton(text='Отзыв отклонён❌', callback_data='_')]]
+    keyboard = types.InlineKeyboardMarkup(inline_keyboard=buttons)
+    return keyboard
+
+
+def problem_solved():
+    buttons = [[types.InlineKeyboardButton(text='Не надо, проблема решена', callback_data='problemsolved')]]
     keyboard = types.InlineKeyboardMarkup(inline_keyboard=buttons)
     return keyboard
 

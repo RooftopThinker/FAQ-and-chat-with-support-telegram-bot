@@ -16,3 +16,14 @@ class SendMailing(StatesGroup):
 
 class FAQ(StatesGroup):
     good_chosen = State()
+
+
+class Problems(StatesGroup):
+    good_chosen = State()
+    problem_chosen = State()
+    problem_reported = State()
+
+
+class IsProblemSolved(StatesGroup):
+    question = State()
+    problem = State()

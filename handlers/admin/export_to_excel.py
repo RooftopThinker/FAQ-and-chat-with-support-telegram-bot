@@ -8,7 +8,7 @@ from data import User
 from filters import IsAdmin
 from config import DELETE_EXPORTS
 router = Router()
-
+router.message.filter(IsAdmin())
 
 def to_dict(row):
     if row is None:
@@ -35,7 +35,7 @@ async def exportexcel(session: AsyncSession):
     return filename
 
 
-@router.callback_query(F.data == 'export', IsAdmin())
+@router.callback_query(F.data == 'export')
 async def send_review(callback: types.CallbackQuery, session: AsyncSession):
     await callback.message.answer("Формирую таблицу Excel...")
     filename = await exportexcel(session)

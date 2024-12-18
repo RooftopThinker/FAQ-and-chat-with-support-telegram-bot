@@ -2,6 +2,7 @@ from aiogram import Router, F, types
 from sqlalchemy.ext.asyncio import AsyncSession
 import sqlalchemy
 from data import User
+from keyboards.all_keyboards import review_approved, review_declined
 router = Router()
 
 
@@ -15,8 +16,8 @@ router = Router()
 @router.callback_query(F.data.startswith('accept'))
 async def approve_review(callback: types.CallbackQuery, session: AsyncSession):
     data = int(callback.data.split('_')[1])
-    await callback.message.edit_reply_markup()
-    await callback.message.edit_caption(caption='Отзыв одобрен✅')
+    await callback.message.edit_reply_markup(reply_markup=review_approved())
+    await calFlback.bot
     request = sqlalchemy.update(User).filter(User.telegram_id == data).values(reviews_approved=User.reviews_approved+1)
     await session.execute(request)
     await session.commit()
@@ -24,8 +25,10 @@ async def approve_review(callback: types.CallbackQuery, session: AsyncSession):
 
 
 @router.callback_query(F.data.startswith('decline'))
-async def approve_review(callback: types.CallbackQuery):
+async def approve_review(callback: types.CallbackQuery, session: AsyncSession):
     data = int(callback.data.split('_')[1])
-    await callback.message.edit_reply_markup()
-    await callback.message.edit_caption(caption='Отзыв отклонен❌')
+    request = sqlalchemy.update(User).filter(User.telegram_id == data).values(reviews_declined=User.reviews_declined+1)
+    await session.execute(request)
+    await session.commit()
+    await callback.message.edit_reply_markup(reply_markup=review_declined())
     await callback.bot.send_message(text='К сожалению, мы не можем принять этот отзыв.', chat_id=data)

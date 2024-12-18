@@ -14,29 +14,31 @@ async def faq(message: types.Message, state: FSMContext):
     await state.set_state(FAQ.good_chosen)
 
 
-@router.message(F.data == 'dispenser', FAQ.good_chosen)
-async def faq_dispenser(message: types.Message, state: FSMContext, session: AsyncSession):
+@router.callback_query(F.data == 'dispenser', FAQ.good_chosen)
+async def faq_dispenser(callback: types.CallbackQuery, state: FSMContext, session: AsyncSession):
     file = open('static/dispenser_faq.txt')
     text = file.read()
-    request = sqlalchemy.update(User).filter(User.telegram_id == message.from_user.id).values(
+    request = sqlalchemy.update(User).filter(User.telegram_id == callback.from_user.id).values(
         {'faq_viewed':User.faq_viewed+1}
     )
     await session.execute(request)
+    await session.commit()
     for x in range(0, len(text), 4096):
         mess = text[x: x + 4096]
-        await message.answer(mess, parse_mode='html', reply_markup=menu())
+        await callback.message.answer(mess, parse_mode='html', reply_markup=menu())
     await state.clear()
 
-@router.message(F.data == 'humidifier', FAQ.good_chosen)
-async def faq_dispenser(message: types.Message, state: FSMContext,  session: AsyncSession):
-    file = open('static/dispenser_faq.txt')
+@router.callback_query(F.data == 'humidifier', FAQ.good_chosen)
+async def faq_dispenser(callback: types.CallbackQuery, state: FSMContext,  session: AsyncSession):
+    file = open('static/humidifier_faq.txt')
     text = file.read()
-    request = sqlalchemy.update(User).filter(User.telegram_id == message.from_user.id).values(
+    request = sqlalchemy.update(User).filter(User.telegram_id == callback.from_user.id).values(
         {'faq_viewed': User.faq_viewed + 1}
     )
     await session.execute(request)
+    await session.commit()
     for x in range(0, len(text), 4096):
         mess = text[x: x + 4096]
-        await message.answer(mess, parse_mode='html', reply_markup=menu())
+        await callback.message.answer(mess, parse_mode='html', reply_markup=menu())
     await state.clear()
 
