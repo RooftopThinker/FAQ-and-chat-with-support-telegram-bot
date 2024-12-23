@@ -1,11 +1,11 @@
 import sqlalchemy
 from aiogram import Router, F, types
 from sqlalchemy.ext.asyncio import AsyncSession
-from data import User
+from data import User, Appeal
 from aiogram_album import AlbumMessage
 from aiogram.fsm.context import FSMContext
 from .fsm import GetBonus
-from config import ADMINS_CHAT_ID
+from config import ADMINS_CHAT_ID, NEW_TOPIC_ID
 from keyboards.all_keyboards import cancel, approve_or_decline_subscription, menu
 router = Router()
 
@@ -34,7 +34,7 @@ async def fetch_requisite(message: AlbumMessage, state: FSMContext):
 @router.message(GetBonus.send_for_approval)
 async def send_for_approval(message: AlbumMessage, state: FSMContext, session: AsyncSession):
     data = await state.get_data()
-    await message.bot.send_media_group(media=data['media_group'], chat_id=ADMINS_CHAT_ID)
+    media_group = await message.bot.send_media_group(media=data['media_group'], chat_id=ADMINS_CHAT_ID, message_thread_id=NEW_TOPIC_ID)
     request = sqlalchemy.select(User).filter(User.telegram_id == message.from_user.id)
     result: User = list(await session.scalars(request))[0]
     text = ('Отправлен новый отзыв!🔝 Данные пользователя:\n'
@@ -43,7 +43,17 @@ async def send_for_approval(message: AlbumMessage, state: FSMContext, session: A
             f"Номер телефона: {result.phone}\n"
             f"Реквизиты: {message.text}")
     await message.answer('Отзыв отправлен! Ожидайте одобрения', reply_markup=menu())
-    await message.bot.send_message(chat_id=ADMINS_CHAT_ID, reply_markup=approve_or_decline_subscription(message.from_user.id), text=text)
+
+    info = await message.bot.send_message(chat_id=ADMINS_CHAT_ID,
+                                       reply_markup=approve_or_decline_subscription(message.from_user.id), text=text,
+                                       message_thread_id=NEW_TOPIC_ID)
+    for i in media_group:
+        appeal = Appeal(message_id=i.message_id, by_user=message.from_user.id, is_review=True)
+        session.add(appeal)
+    appeal = Appeal(message_id=info.message_id, by_user=message.from_user.id, is_review=True)
+    session.add(appeal)
+
+    await session.commit()
     await state.clear()
 
 @router.message(GetBonus.fetch_bank_requisite,~F.media_group_id)

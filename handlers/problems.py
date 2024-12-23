@@ -8,7 +8,7 @@ import sqlalchemy
 from data import User, Appeal
 import aiofiles
 from .fsm import Problems
-from config import ADMINS_CHAT_ID
+from config import ADMINS_CHAT_ID, ANSWERED_APPEALS_TOPIC_ID, NEW_APPEALS_TOPIC_ID
 router = Router()
 
 @router.message(F.text == 'Проблемы с товаром')
@@ -49,7 +49,7 @@ async def problem_chosen(callback: types.CallbackQuery, state: FSMContext):
         f = await aiofiles.open('static/problems_humidifier.txt', mode='r')
     else:
         f = await aiofiles.open('static/problems_dispenser.txt', mode='r')
-    problem = [i for i in await f.readlines()][int(problem)-1]
+    problem = [str(i)+'\n\nК видео вы можете добавить текстовое сообщение с описанием проблемы.' for i in await f.readlines()][int(problem)-1]
     await callback.message.edit_text(text=problem, reply_markup=cancel())
     await state.set_state(Problems.problem_reported)
 
@@ -82,12 +82,15 @@ async def mediagroup_problem_reported(message: AlbumMessage, state: FSMContext, 
             await message.answer('Пришлите или видео, или фото. Другие типы медиа не принимаются')
             return
 
-    await message.bot.send_media_group(chat_id=ADMINS_CHAT_ID, media=media_group)
-    appeal_message = await message.bot.send_message(chat_id=ADMINS_CHAT_ID, text=msg_text)
-    request = sqlalchemy.update(User).values({'problems_appealed': User.problems_appealed+1})
+    appeal_media = await message.bot.send_media_group(chat_id=ADMINS_CHAT_ID, media=media_group, message_thread_id=NEW_APPEALS_TOPIC_ID)
+    for i in appeal_media:
+        new_appeal = Appeal(by_user=message.from_user.id, message_id=i.message_id)
+        session.add(new_appeal)
+    appeal_message = await message.bot.send_message(chat_id=ADMINS_CHAT_ID, text=msg_text, message_thread_id=NEW_APPEALS_TOPIC_ID)
+    request = sqlalchemy.update(User).filter(User.telegram_id == message.from_user.id).values({'problems_appealed': User.problems_appealed+1})
     new_appeal = Appeal(by_user=message.from_user.id, message_id=appeal_message.message_id)
-    await session.execute(request)
     session.add(new_appeal)
+    await session.execute(request)
     await session.commit()
     await message.answer("Сообщение о проблеме отправлено сотрудникам. Ожидайте ответа", reply_markup=menu())
     await state.clear()
@@ -105,10 +108,14 @@ async def problem_reported(message: types.Message, state: FSMContext, session: A
                 f'\n'
                 f'Ответьте на это сообщение бота, и Ваш ответ отправится пользователю'
                 )
-    await message.bot.copy_message(chat_id=ADMINS_CHAT_ID, from_chat_id=message.chat.id, message_id=message.message_id)
-    appeal_message = await message.bot.send_message(chat_id=ADMINS_CHAT_ID, text=msg_text)
-    request = sqlalchemy.update(User).values({'problems_appealed': User.problems_appealed+1})
+    appeal_message = await message.bot.copy_message(chat_id=ADMINS_CHAT_ID, from_chat_id=message.chat.id, message_id=message.message_id,
+                                                    message_thread_id=NEW_APPEALS_TOPIC_ID)
+    appeal_info = await message.bot.send_message(chat_id=ADMINS_CHAT_ID, text=msg_text, message_thread_id=NEW_APPEALS_TOPIC_ID)
+    request = sqlalchemy.update(User).filter(User.telegram_id == message.from_user.id).values(
+        {'problems_appealed': User.problems_appealed + 1})
     new_appeal = Appeal(by_user=message.from_user.id, message_id=appeal_message.message_id)
+    session.add(new_appeal)
+    new_appeal = Appeal(by_user=message.from_user.id, message_id=appeal_info.message_id)
     await session.execute(request)
     session.add(new_appeal)
     await session.commit()

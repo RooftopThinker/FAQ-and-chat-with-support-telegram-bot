@@ -19,10 +19,10 @@ TTLCacheAlbumMiddleware(router=dp)
 async def create_metadata():
     async with engine.begin() as conn:
         await conn.run_sync(SqlAlchemyBase.metadata.create_all)
-@dp.message()
-async def faq(message: types.Message):
-
-    await message.answer(str(message.reply_to_message.from_user.id))
+# @dp.message()
+# async def faq(message: types.Message):
+#
+#     await message.answer(str(message.reply_to_message.from_user.id))
 
 async def main():
     await setup_dispatcher(dp)

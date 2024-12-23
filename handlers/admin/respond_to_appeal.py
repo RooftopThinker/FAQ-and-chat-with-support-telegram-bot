@@ -8,9 +8,9 @@ import sqlalchemy
 from keyboards.all_keyboards import yes_or_no, problem_solved, menu
 from data import Appeal
 from asyncio import sleep
-from config import ADMINS_CHAT_ID, ANSWERED_APPEALS_TOPIC_ID
+from config import ADMINS_CHAT_ID, ANSWERED_APPEALS_TOPIC_ID, BOT_TOKEN
 from ..fsm import IsProblemSolved, Problems
-from data import delete_by_user_id
+from data import delete_appeal_by_user_id
 router = Router()
 # router.message.filter(IsAdmin())
 
@@ -32,7 +32,7 @@ async def answer_to_appeal(message: types.Message, session: AsyncSession, dispat
                                    reply_markup=yes_or_no())
     user_state: FSMContext = FSMContext(storage=dispatcher.storage, key=StorageKey(
         chat_id=appeal.by_user, user_id=appeal.by_user, bot_id=message.bot.id))
-    await user_state.set_state(Problems.problem_reported)
+    await user_state.set_state(IsProblemSolved.question)
     await message.reply('Ответ на обращение доставлен пользователю')
 
 
@@ -44,18 +44,18 @@ async def is_problem_solved(message: types.Message):
 @router.callback_query(IsProblemSolved.question, F.data.in_({'yes', 'no'}))
 async def is_problem_solved(callback: types.CallbackQuery, state: FSMContext, session: AsyncSession):
     if callback.data == 'yes':
-        await delete_by_user_id(callback.from_user.id, callback.bot, session)
+        await delete_appeal_by_user_id(callback.from_user.id, callback.bot, session)
         await callback.message.edit_reply_markup()
         await callback.message.answer('Рады были помочь! Спасибо, что выбрали WiseHome', reply_markup=menu())
         await state.clear()
     else:
         await callback.message.answer('Напишите ответное сообщение службе поддержки', reply_markup=problem_solved())
-        await state.set_state(IsProblemSolved.problem)
+        await state.set_state(Problems.problem_reported)
 
 
-@router.callback_query(Problems.problem_reported, F.data == 'problemsolved')
-async def problem_solved(callback: types.CallbackQuery, state: FSMContext, session: AsyncSession):
-    await delete_by_user_id(callback.from_user.id, callback.bot, session)
+@router.callback_query(F.data == 'problemsolved')
+async def problemsolved(callback: types.CallbackQuery, state: FSMContext, session: AsyncSession):
+    await delete_appeal_by_user_id(callback.from_user.id, callback.bot, session)
     await callback.message.edit_reply_markup()
     await callback.message.answer('Рады были помочь! Спасибо, что выбрали WiseHome', reply_markup=menu())
     await state.clear()
