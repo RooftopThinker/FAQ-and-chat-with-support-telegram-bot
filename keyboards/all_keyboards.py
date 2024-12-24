@@ -23,6 +23,7 @@ def approve_or_decline_subscription(user_id):
 def menu():
     buttons = [[types.KeyboardButton(text='Получить бонус')],
                [types.KeyboardButton(text='Вопросы')],
+               [types.KeyboardButton(text='Инструкции')],
                [types.KeyboardButton(text='Проблемы с товаром')]]
     keyboard = types.ReplyKeyboardMarkup(resize_keyboard=True, keyboard=buttons, one_time_keyboard=True)
     return keyboard
