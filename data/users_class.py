@@ -12,5 +12,6 @@ class User(SqlAlchemyBase):
     reviews_approved = sqlalchemy.Column(sqlalchemy.Integer, default=0)
     reviews_declined = sqlalchemy.Column(sqlalchemy.Integer, default=0)
     faq_viewed = sqlalchemy.Column(sqlalchemy.Integer, default=0)
+    instructions_viewed = sqlalchemy.Column(sqlalchemy.Integer, default=0)
     problems_appealed = sqlalchemy.Column(sqlalchemy.Integer, default=0)
     # bank_requisite = sqlalchemy.Column(sqlalchemy.String)

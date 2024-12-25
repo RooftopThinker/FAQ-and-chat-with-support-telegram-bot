@@ -14,9 +14,11 @@ async def stats(callback: types.CallbackQuery, session: AsyncSession):
     max_id = await session.scalar(sqlalchemy.select(sqlalchemy.func.max(User.id)))
     declined_sum = await session.scalar(sqlalchemy.select(sqlalchemy.func.sum(User.reviews_declined)))
     faq_sum = await session.scalar(sqlalchemy.select(sqlalchemy.func.sum(User.faq_viewed)))
+    instructions_sum = await session.scalar(sqlalchemy.select(sqlalchemy.func.sum(User.instructions_viewed)))
     #print(f"Approved sum: {approved_sum}, Appealed sum: {appealed_sum}, Max ID: {max_id}")
     await callback.message.answer(text=f'Отзывов принято: {approved_sum},\n'
                                        f'Отзывов отклонено: {declined_sum},\n'
-                                       f'Раз вопросов просмотрено: {faq_sum},\n'
+                                       f'Раз вопросы просмотрены: {faq_sum},\n'
+                                       f'Раз инструкции просмотрены: {instructions_sum}\n'
                          f'Обращений по проблемам: {appealed_sum},\n'
                          f'Пользователей: {max_id}')

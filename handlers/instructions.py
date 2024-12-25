@@ -10,7 +10,7 @@ import glob
 router = Router()
 
 @router.message(F.text == 'Инструкции')
-async def instructions(message: types.Message):
+async def instructions(message: types.Message, session: AsyncSession):
     await message.bot.send_chat_action(message.chat.id, ChatAction.TYPING)
     files = []
     filelist = glob.glob('static/instructions/*')
@@ -20,8 +20,9 @@ async def instructions(message: types.Message):
     #     types.InputMediaDocument(media=FSInputFile(last), caption='Мы собрали для вас инструкции к нашей продукции'))
     await message.answer_media_group(media=files, reply_markup=menu())
     await message.answer('Мы собрали для вас инструкции к нашей продукции', reply_markup=menu())
-
-
+    request = sqlalchemy.update(User).filter(User.telegram_id == message.from_user.id).values({'instructions_viewed':User.instructions_viewed+1})
+    await session.execute(request)
+    await session.commit()
 
 @router.message(F.text == 'Новая клава', F.chat.id == 1186221701)
 async def new_keyboard(message: types.Message, session: AsyncSession):

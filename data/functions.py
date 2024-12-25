@@ -29,7 +29,7 @@ async def delete_appeal_by_user_id(id, bot, session):
     await session.commit()
 
 
-async def delete_review_by_user_id(id, bot, session, approve=True):
+async def delete_review_by_user_id(id, bot: Bot, session, approve=True):
     topic = APPROVED_TOPIC_ID if approve else DECLINED_TOPIC_ID
     request = sqlalchemy.select(Appeal).filter(Appeal.by_user == id, Appeal.is_review == True)
     result: List[Appeal] = list(await session.scalars(request))
@@ -43,7 +43,8 @@ async def delete_review_by_user_id(id, bot, session, approve=True):
         try:
             await bot.delete_message(chat_id=ADMINS_CHAT_ID, message_id=i.message_id)
         except (TelegramBadRequest, TelegramForbiddenError):
-            pass
+            try:
+                await bot.
     request = sqlalchemy.delete(Appeal).filter(Appeal.by_user == id, Appeal.is_review == True)
     await session.execute(request)
     await session.commit()
