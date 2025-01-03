@@ -70,7 +70,8 @@ async def mediagroup_problem_reported(message: AlbumMessage, state: FSMContext, 
                 f'Сообщение пользователя {": " + text if text else "пусто"}\n'
                 f'Вложения пользователя показаны выше🔝'
                 f'\n'
-                f'Ответьте на это сообщение бота, и Ваш ответ отправится пользователю'
+                f'Ответьте на это сообщение бота, и Ваш ответ отправится пользователю\n\n'
+                f'#N{user.telegram_id}'
                 )
     media_group = []
     for m in message:
@@ -106,7 +107,8 @@ async def problem_reported(message: types.Message, state: FSMContext, session: A
                 f'Номер телефона: {user.phone}\n\n'
                 f'Сообщение пользователя показано выше🔝'
                 f'\n'
-                f'Ответьте на это сообщение бота, и Ваш ответ отправится пользователю'
+                f'Ответьте на это сообщение бота, и Ваш ответ отправится пользователю\n\n'
+                f'#N{user.telegram_id}'
                 )
     appeal_message = await message.bot.copy_message(chat_id=ADMINS_CHAT_ID, from_chat_id=message.chat.id, message_id=message.message_id,
                                                     message_thread_id=NEW_APPEALS_TOPIC_ID)

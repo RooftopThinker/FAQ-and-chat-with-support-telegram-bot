@@ -22,7 +22,7 @@ async def approve_review(callback: types.CallbackQuery, session: AsyncSession):
     await session.execute(request)
     await session.commit()
     await callback.bot.send_message(text='Ваш отзыв принят! Мы начислили Вам бонусы для следующих покупок.', chat_id=data)
-
+#changed
 
 @router.callback_query(F.data.startswith('decline'))
 async def decline_review(callback: types.CallbackQuery, session: AsyncSession):
