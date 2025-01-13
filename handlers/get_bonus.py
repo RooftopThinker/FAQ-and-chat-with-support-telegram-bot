@@ -34,9 +34,16 @@ async def fetch_requisite(message: AlbumMessage, state: FSMContext):
 @router.message(GetBonus.send_for_approval)
 async def send_for_approval(message: AlbumMessage, state: FSMContext, session: AsyncSession):
     data = await state.get_data()
-    media_group = await message.bot.send_media_group(media=data['media_group'], chat_id=ADMINS_CHAT_ID, message_thread_id=NEW_TOPIC_ID)
+
     request = sqlalchemy.select(User).filter(User.telegram_id == message.from_user.id)
-    result: User = list(await session.scalars(request))[0]
+
+    try:
+        result: User = list(await session.scalars(request))[0]
+    except IndexError:
+        await message.answer('Вы не указали номер телефона! Напишите /start, чтобы завершить регистрацию')
+        return
+    media_group = await message.bot.send_media_group(media=data['media_group'], chat_id=ADMINS_CHAT_ID,
+                                                         message_thread_id=NEW_TOPIC_ID)
     text = ('Отправлен новый отзыв!🔝 Данные пользователя:\n'
             f"Username: {result.telegram_username}\n"
             f"Отображаемое имя: {result.telegram_name}\n"
