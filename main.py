@@ -9,7 +9,7 @@ import config
 import aiofiles
 from aiogram_album import AlbumMessage
 from data.database import SqlAlchemyBase, engine
-logging.basicConfig(level=logging.WARNING)
+logging.basicConfig(level=logging.INFO)
 
 bot = Bot(token=config.BOT_TOKEN)
 # asyncio.set_event_loop_policy(WindowsSelectorEventLoopPolicy())

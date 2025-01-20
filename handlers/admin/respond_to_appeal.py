@@ -8,9 +8,9 @@ import sqlalchemy
 from keyboards.all_keyboards import yes_or_no, problem_solved, menu
 from data import Appeal
 from asyncio import sleep
-from config import ADMINS_CHAT_ID, ANSWERED_APPEALS_TOPIC_ID, BOT_TOKEN
+from config import ADMINS_CHAT_ID
 from ..fsm import IsProblemSolved, Problems
-from data import delete_appeal_by_user_id
+from data import schedule_deletion_by_user_id
 router = Router()
 # router.message.filter(IsAdmin())
 
@@ -44,7 +44,7 @@ async def is_problem_solved(message: types.Message):
 @router.callback_query(IsProblemSolved.question, F.data.in_({'yes', 'no'}))
 async def is_problem_solved(callback: types.CallbackQuery, state: FSMContext, session: AsyncSession):
     if callback.data == 'yes':
-        await delete_appeal_by_user_id(callback.from_user.id, callback.bot, session)
+        await schedule_deletion_by_user_id(callback.from_user.id, callback.bot, session)
         await callback.message.edit_reply_markup()
         await callback.message.answer('Рады были помочь! Спасибо, что выбрали WiseHome', reply_markup=menu())
         await state.clear()
@@ -55,7 +55,7 @@ async def is_problem_solved(callback: types.CallbackQuery, state: FSMContext, se
 
 @router.callback_query(F.data == 'problemsolved')
 async def problemsolved(callback: types.CallbackQuery, state: FSMContext, session: AsyncSession):
-    await delete_appeal_by_user_id(callback.from_user.id, callback.bot, session)
+    await schedule_deletion_by_user_id(callback.from_user.id, callback.bot, session)
     await callback.message.edit_reply_markup()
     await callback.message.answer('Рады были помочь! Спасибо, что выбрали WiseHome', reply_markup=menu())
     await state.clear()

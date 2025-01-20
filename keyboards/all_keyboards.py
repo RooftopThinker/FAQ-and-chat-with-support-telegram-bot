@@ -101,3 +101,8 @@ def problem_solved():
     keyboard = types.InlineKeyboardMarkup(inline_keyboard=buttons)
     return keyboard
 
+
+def send_appeal():
+    buttons = [[types.InlineKeyboardButton(text='Отправить сообщение службе поддержки', callback_data='send_appeal')]]
+    keyboard = types.InlineKeyboardMarkup(inline_keyboard=buttons)
+    return keyboard

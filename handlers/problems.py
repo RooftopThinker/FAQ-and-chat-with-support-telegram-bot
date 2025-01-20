@@ -1,16 +1,17 @@
 from aiogram import Router, F, types
+from aiogram.enums import ChatType
 from aiogram.exceptions import TelegramBadRequest
 from keyboards.all_keyboards import dispenser_or_humidifier, menu, dispenser_problems, humidifier_problems, cancel
 from aiogram.fsm.context import FSMContext
 from sqlalchemy.ext.asyncio import AsyncSession
 from aiogram_album import AlbumMessage
 import sqlalchemy
-from data import User, Appeal
+from data import User, Appeal, Thread
 import aiofiles
 from .fsm import Problems
-from config import ADMINS_CHAT_ID, ANSWERED_APPEALS_TOPIC_ID, NEW_APPEALS_TOPIC_ID
+from config import ADMINS_CHAT_ID
 router = Router()
-
+router.message.filter(F.chat.type == ChatType.PRIVATE)
 @router.message(F.text == 'Проблемы с товаром')
 async def problems(message: types.Message, state: FSMContext):
     await message.answer('Мы подготовили ответы на часто задаваемые вопросы. Выберите категорию товара.',
@@ -34,7 +35,7 @@ async def problems_humidifier(callback: types.CallbackQuery, state: FSMContext):
     await callback.message.edit_text(text='''Выберите проблему для обращения в поддержку:
 1. Проблема: Не работают/некорректно работают увлажнители 182308427, 221426427.
 2. Проблема: Идет пар из одной форсунки/не идет пар вовсе.
-3. Проблема: Не работают/некорректно работают увлажнители 182307898, 182307913.
+3. Проблема: Не рабfull_nameотают/некорректно работают увлажнители 182307898, 182307913.
 4. Проблема: Нет пара/слабый пар у увлажнителя 174808327.
 5. Проблема: После работы увлажнителя 182307913 остается лужа на поверхности/конденсат на крышке?''', reply_markup=humidifier_problems())
     await state.set_state(Problems.problem_chosen)
@@ -59,6 +60,15 @@ async def problem_chosen(callback: types.CallbackQuery, state: FSMContext):
 async def mediagroup_problem_reported(message: AlbumMessage, state: FSMContext, session: AsyncSession):
     request = sqlalchemy.select(User).filter(User.telegram_id == message.from_user.id)
     user: User = list(await session.scalars(request))[0]
+    request = sqlalchemy.select(Thread).filter(Thread.by_user == message.from_user.id, Thread.is_open == True)
+    try:
+        topic: Thread = list(await session.scalars(request))[0]
+    except IndexError:
+        topic: types.ForumTopic = await message.bot.create_forum_topic(chat_id=ADMINS_CHAT_ID,
+                                                     name=f'❌ОТКРЫТАЯ проблема {message.from_user.name}')
+
+        session.add(Thread(by_user=message.from_user.id, name=topic.name, message_thread_id=topic.message_thread_id))
+        await session.commit()
     try:
         text = message.caption
     except TelegramBadRequest:
@@ -83,11 +93,11 @@ async def mediagroup_problem_reported(message: AlbumMessage, state: FSMContext, 
             await message.answer('Пришлите или видео, или фото. Другие типы медиа не принимаются')
             return
 
-    appeal_media = await message.bot.send_media_group(chat_id=ADMINS_CHAT_ID, media=media_group, message_thread_id=NEW_APPEALS_TOPIC_ID)
+    appeal_media = await message.bot.send_media_group(chat_id=ADMINS_CHAT_ID, media=media_group, message_thread_id=topic.message_thread_id)
     for i in appeal_media:
         new_appeal = Appeal(by_user=message.from_user.id, message_id=i.message_id)
         session.add(new_appeal)
-    appeal_message = await message.bot.send_message(chat_id=ADMINS_CHAT_ID, text=msg_text, message_thread_id=NEW_APPEALS_TOPIC_ID)
+    appeal_message = await message.bot.send_message(chat_id=ADMINS_CHAT_ID, text=msg_text, message_thread_id=topic.message_thread_id)
     request = sqlalchemy.update(User).filter(User.telegram_id == message.from_user.id).values({'problems_appealed': User.problems_appealed+1})
     new_appeal = Appeal(by_user=message.from_user.id, message_id=appeal_message.message_id)
     session.add(new_appeal)
@@ -101,6 +111,15 @@ async def mediagroup_problem_reported(message: AlbumMessage, state: FSMContext, 
 async def problem_reported(message: types.Message, state: FSMContext, session: AsyncSession):
     request = sqlalchemy.select(User).filter(User.telegram_id == message.from_user.id)
     user: User = list(await session.scalars(request))[0]
+    request = sqlalchemy.select(Thread).filter(Thread.by_user == message.from_user.id, Thread.is_open == True)
+    try:
+        topic: Thread = list(await session.scalars(request))[0]
+    except IndexError:
+        topic: types.ForumTopic = await message.bot.create_forum_topic(chat_id=ADMINS_CHAT_ID,
+                                                     name=f'❌ОТКРЫТАЯ проблема {message.from_user.id}')
+
+        session.add(Thread(by_user=message.from_user.id, name=topic.name, message_thread_id=topic.message_thread_id))
+        await session.commit()
     msg_text = ('Новое обращение по проблеме:'
                 f'Username: {user.telegram_username}\n'
                 f'Отображаемое имя: {user.telegram_name}\n'
@@ -111,8 +130,8 @@ async def problem_reported(message: types.Message, state: FSMContext, session: A
                 f'#N{user.telegram_id}'
                 )
     appeal_message = await message.bot.copy_message(chat_id=ADMINS_CHAT_ID, from_chat_id=message.chat.id, message_id=message.message_id,
-                                                    message_thread_id=NEW_APPEALS_TOPIC_ID)
-    appeal_info = await message.bot.send_message(chat_id=ADMINS_CHAT_ID, text=msg_text, message_thread_id=NEW_APPEALS_TOPIC_ID)
+                                                    message_thread_id=topic.message_thread_id)
+    appeal_info = await message.bot.send_message(chat_id=ADMINS_CHAT_ID, text=msg_text, message_thread_id=topic.message_thread_id)
     request = sqlalchemy.update(User).filter(User.telegram_id == message.from_user.id).values(
         {'problems_appealed': User.problems_appealed + 1})
     new_appeal = Appeal(by_user=message.from_user.id, message_id=appeal_message.message_id)
