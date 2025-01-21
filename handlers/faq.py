@@ -25,7 +25,7 @@ async def faq_dispenser(callback: types.CallbackQuery, state: FSMContext, sessio
     await session.commit()
     for x in range(0, len(text), 4096):
         mess = text[x: x + 4096]
-        await callback.message.answer(mess, parse_mode='html', reply_markup=menu())
+        await callback.message.answer(mess, parse_mode='html', reply_markup=await menu(session, callback.from_user.id))
     await state.clear()
 
 @router.callback_query(F.data == 'humidifier', FAQ.good_chosen)
@@ -39,6 +39,6 @@ async def faq_dispenser(callback: types.CallbackQuery, state: FSMContext,  sessi
     await session.commit()
     for x in range(0, len(text), 4096):
         mess = text[x: x + 4096]
-        await callback.message.answer(mess, parse_mode='html', reply_markup=menu())
+        await callback.message.answer(mess, parse_mode='html', reply_markup=await menu(session, callback.from_user.id))
     await state.clear()
 

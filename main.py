@@ -22,7 +22,7 @@ async def create_metadata():
 # @dp.message()
 # async def faq(message: types.Message):
 #
-#     await message.answer(str(message.reply_to_message.from_user.id))
+#     await message.answer(str(message.caption))
 
 async def main():
     await setup_dispatcher(dp)

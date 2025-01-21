@@ -49,7 +49,7 @@ async def send_for_approval(message: AlbumMessage, state: FSMContext, session: A
             f"Отображаемое имя: {result.telegram_name}\n"
             f"Номер телефона: {result.phone}\n"
             f"Реквизиты: {message.text}")
-    await message.answer('Отзыв отправлен! Ожидайте одобрения', reply_markup=menu())
+    await message.answer('Отзыв отправлен! Ожидайте одобрения', reply_markup=await menu(session, message.from_user.id))
 
     info = await message.bot.send_message(chat_id=ADMINS_CHAT_ID,
                                        reply_markup=approve_or_decline_subscription(message.from_user.id), text=text,

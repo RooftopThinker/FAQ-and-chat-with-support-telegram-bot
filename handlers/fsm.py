@@ -27,3 +27,7 @@ class Problems(StatesGroup):
 class IsProblemSolved(StatesGroup):
     question = State()
     problem = State()
+
+
+class BackToTalk(StatesGroup):
+    confirm = State()

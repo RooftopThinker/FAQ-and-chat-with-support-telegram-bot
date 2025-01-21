@@ -18,8 +18,8 @@ async def instructions(message: types.Message, session: AsyncSession):
         files.append(types.InputMediaDocument(media=FSInputFile(i)))
     # files.append(
     #     types.InputMediaDocument(media=FSInputFile(last), caption='Мы собрали для вас инструкции к нашей продукции'))
-    await message.answer_media_group(media=files, reply_markup=menu())
-    await message.answer('Мы собрали для вас инструкции к нашей продукции', reply_markup=menu())
+    await message.answer_media_group(media=files, reply_markup=await menu(session, message.from_user.id))
+    await message.answer('Мы собрали для вас инструкции к нашей продукции', reply_markup=await menu(session, message.from_user.id))
     request = sqlalchemy.update(User).filter(User.telegram_id == message.from_user.id).values({'instructions_viewed':User.instructions_viewed+1})
     await session.execute(request)
     await session.commit()
@@ -29,5 +29,5 @@ async def new_keyboard(message: types.Message, session: AsyncSession):
     request = sqlalchemy.select(User)
     users = list(await session.scalars(request))
     for i in users:
-        await message.bot.send_message(chat_id=i.telegram_id, text='Наш бот обновлён! Добавлен раздел инструкций, чтобы Ваше пользование нашей продукцией было наиболее комфортным', reply_markup=menu())
+        await message.bot.send_message(chat_id=i.telegram_id, text='Наш бот обновлён! Добавлен раздел инструкций, чтобы Ваше пользование нашей продукцией было наиболее комфортным', reply_markup=await menu(session, message.from_user.id))
         await sleep(0.05)

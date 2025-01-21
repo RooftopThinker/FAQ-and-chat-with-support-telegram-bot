@@ -1,7 +1,9 @@
+from data import create_topic_for_user
 from aiogram import Router, F, types
 from aiogram.enums import ChatType
 from aiogram.exceptions import TelegramBadRequest
-from keyboards.all_keyboards import dispenser_or_humidifier, menu, dispenser_problems, humidifier_problems, cancel
+from keyboards.all_keyboards import dispenser_or_humidifier, menu, dispenser_problems, humidifier_problems, cancel, \
+    return_to_menu
 from aiogram.fsm.context import FSMContext
 from sqlalchemy.ext.asyncio import AsyncSession
 from aiogram_album import AlbumMessage
@@ -10,11 +12,15 @@ from data import User, Appeal, Thread
 import aiofiles
 from .fsm import Problems
 from config import ADMINS_CHAT_ID
+from typing import Union
 router = Router()
 router.message.filter(F.chat.type == ChatType.PRIVATE)
+
+@router.callback_query(F.data == 'send_appeal')
 @router.message(F.text == 'Проблемы с товаром')
-async def problems(message: types.Message, state: FSMContext):
-    await message.answer('Мы подготовили ответы на часто задаваемые вопросы. Выберите категорию товара.',
+async def problems(update: Union[types.Message, types.CallbackQuery], state: FSMContext):
+    message = update if isinstance(update, types.Message) else update.message
+    await message.answer('Выберите категорию товара.',
                          reply_markup=dispenser_or_humidifier())
     await state.set_state(Problems.good_chosen)
 
@@ -55,34 +61,16 @@ async def problem_chosen(callback: types.CallbackQuery, state: FSMContext):
     await state.set_state(Problems.problem_reported)
 
 
-@router.message(~F.text.in_(('Получить бонус', 'Контакты', 'Вопросы', 'Проблемы с товаром')),Problems.problem_reported,
+@router.message(~F.text.in_(('Получить бонус', 'Контакты', 'Вопросы', 'Проблемы с товаром', 'Закрыть проблему', 'Вернуться в режим общения с поддержкой')),Problems.problem_reported,
                 F.media_group_id)
 async def mediagroup_problem_reported(message: AlbumMessage, state: FSMContext, session: AsyncSession):
-    request = sqlalchemy.select(User).filter(User.telegram_id == message.from_user.id)
-    user: User = list(await session.scalars(request))[0]
     request = sqlalchemy.select(Thread).filter(Thread.by_user == message.from_user.id, Thread.is_open == True)
     try:
         topic: Thread = list(await session.scalars(request))[0]
     except IndexError:
-        topic: types.ForumTopic = await message.bot.create_forum_topic(chat_id=ADMINS_CHAT_ID,
-                                                     name=f'❌ОТКРЫТАЯ проблема {message.from_user.name}')
+        topic = await create_topic_for_user(session, message.bot, message.from_user.id)
 
-        session.add(Thread(by_user=message.from_user.id, name=topic.name, message_thread_id=topic.message_thread_id))
-        await session.commit()
-    try:
-        text = message.caption
-    except TelegramBadRequest:
-        text = ''
-    msg_text = ('Новое обращение по проблеме:'
-                f'Username: {user.telegram_username}\n'
-                f'Отображаемое имя: {user.telegram_name}\n'
-                f'Номер телефона: {user.phone}\n\n'
-                f'Сообщение пользователя {": " + text if text else "пусто"}\n'
-                f'Вложения пользователя показаны выше🔝'
-                f'\n'
-                f'Ответьте на это сообщение бота, и Ваш ответ отправится пользователю\n\n'
-                f'#N{user.telegram_id}'
-                )
+
     media_group = []
     for m in message:
         if m.content_type == 'photo':
@@ -97,48 +85,36 @@ async def mediagroup_problem_reported(message: AlbumMessage, state: FSMContext, 
     for i in appeal_media:
         new_appeal = Appeal(by_user=message.from_user.id, message_id=i.message_id)
         session.add(new_appeal)
-    appeal_message = await message.bot.send_message(chat_id=ADMINS_CHAT_ID, text=msg_text, message_thread_id=topic.message_thread_id)
+
     request = sqlalchemy.update(User).filter(User.telegram_id == message.from_user.id).values({'problems_appealed': User.problems_appealed+1})
-    new_appeal = Appeal(by_user=message.from_user.id, message_id=appeal_message.message_id)
-    session.add(new_appeal)
     await session.execute(request)
     await session.commit()
-    await message.answer("Сообщение о проблеме отправлено сотрудникам. Ожидайте ответа", reply_markup=menu())
-    await state.clear()
+    await message.answer(
+        "Сообщение о проблеме отправлено сотрудникам, чат с ботом находится в режиме общения с поддержкой."
+        " Ожидайте ответа", reply_markup=return_to_menu())
 
 
-@router.message(~F.text.in_(('Получить бонус', 'Контакты', 'Вопросы', 'Проблемы с товаром')),Problems.problem_reported)
+@router.message(~F.text.in_(('Получить бонус', 'Контакты', 'Вопросы', 'Проблемы с товаром', 'Закрыть проблему', 'Вернуться в режим общения с поддержкой')),Problems.problem_reported)
 async def problem_reported(message: types.Message, state: FSMContext, session: AsyncSession):
-    request = sqlalchemy.select(User).filter(User.telegram_id == message.from_user.id)
-    user: User = list(await session.scalars(request))[0]
     request = sqlalchemy.select(Thread).filter(Thread.by_user == message.from_user.id, Thread.is_open == True)
     try:
         topic: Thread = list(await session.scalars(request))[0]
     except IndexError:
-        topic: types.ForumTopic = await message.bot.create_forum_topic(chat_id=ADMINS_CHAT_ID,
-                                                     name=f'❌ОТКРЫТАЯ проблема {message.from_user.id}')
+        topic = await create_topic_for_user(session, message.bot, message.from_user.id)
 
-        session.add(Thread(by_user=message.from_user.id, name=topic.name, message_thread_id=topic.message_thread_id))
-        await session.commit()
-    msg_text = ('Новое обращение по проблеме:'
-                f'Username: {user.telegram_username}\n'
-                f'Отображаемое имя: {user.telegram_name}\n'
-                f'Номер телефона: {user.phone}\n\n'
-                f'Сообщение пользователя показано выше🔝'
-                f'\n'
-                f'Ответьте на это сообщение бота, и Ваш ответ отправится пользователю\n\n'
-                f'#N{user.telegram_id}'
-                )
     appeal_message = await message.bot.copy_message(chat_id=ADMINS_CHAT_ID, from_chat_id=message.chat.id, message_id=message.message_id,
                                                     message_thread_id=topic.message_thread_id)
-    appeal_info = await message.bot.send_message(chat_id=ADMINS_CHAT_ID, text=msg_text, message_thread_id=topic.message_thread_id)
     request = sqlalchemy.update(User).filter(User.telegram_id == message.from_user.id).values(
         {'problems_appealed': User.problems_appealed + 1})
     new_appeal = Appeal(by_user=message.from_user.id, message_id=appeal_message.message_id)
     session.add(new_appeal)
-    new_appeal = Appeal(by_user=message.from_user.id, message_id=appeal_info.message_id)
     await session.execute(request)
-    session.add(new_appeal)
     await session.commit()
-    await message.answer("Сообщение о проблеме отправлено сотрудникам. Ожидайте ответа", reply_markup=menu())
-    await state.clear()
+    await message.answer("Сообщение о проблеме отправлено сотрудникам, чат с ботом находится в режиме общения с поддержкой."
+                         " Ожидайте ответа", reply_markup=return_to_menu())
+
+
+@router.message(F.text == 'Вернуться в режим общения с поддержкой')
+async def back_to_talk(message: types.Message, state: FSMContext):
+    await message.answer("Чат в режиме общения с поддержкой.", reply_markup=return_to_menu())
+    await state.set_state(Problems.problem_reported)

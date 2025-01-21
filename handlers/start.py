@@ -11,12 +11,12 @@ from keyboards.all_keyboards import get_phone_number, menu
 from typing import Union
 router = Router()
 
-
+@router.message(F.text == 'Вернуться в меню')
 @router.message(CommandStart())
-async def start_handler(message: Union[types.Message, types.CallbackQuery], state: FSMContext, session: AsyncSession):
-    request = sqlalchemy.select(User).filter(User.telegram_id == message.from_user.id)
+async def start_handler(update: Union[types.Message, types.CallbackQuery], state: FSMContext, session: AsyncSession):
+    request = sqlalchemy.select(User).filter(User.telegram_id == update.from_user.id)
     result = list(await session.scalars(request))
-    message = message if isinstance(message, types.Message) else message.message
+    message = update if isinstance(update, types.Message) else update.message
     if not result:
         await message.answer(text='''Добро пожаловать в WiseHome! 🏡
 Мы рады, что вы с нами! Вот что вы можете сделать в нашем боте:
@@ -35,7 +35,7 @@ async def start_handler(message: Union[types.Message, types.CallbackQuery], stat
 ❓ Посмотреть ответы на популярные вопросы.
 🛠 Сообщить о проблеме или оставить заявку на обратную связь.
 
-Выберите интересующий вас раздел из меню ниже, и мы с радостью поможем! 😊''', reply_markup=menu())
+Выберите интересующий вас раздел из меню ниже, и мы с радостью поможем! 😊''', reply_markup=await menu(session, update.from_user.id))
 
 
 @router.message(RegisterUser.fetch_number, F.content_type == types.ContentType.CONTACT)
