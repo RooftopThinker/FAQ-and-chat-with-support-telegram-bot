@@ -76,7 +76,7 @@ async def mediagroup_problem_reported(message: AlbumMessage, state: FSMContext, 
         if m.content_type == 'photo':
             media_group.append(types.InputMediaPhoto(media=m.photo[-1].file_id))
         elif m.content_type == 'video':
-            media_group.append(types.InputMediaVideo(media=m.video[-1].file_id))
+            media_group.append(types.InputMediaVideo(media=m.video.file_id))
         else:
             await message.answer('Пришлите или видео, или фото. Другие типы медиа не принимаются')
             return

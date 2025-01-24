@@ -2,7 +2,7 @@ from aiogram_album.ttl_cache_middleware import TTLCacheAlbumMiddleware
 import asyncio
 import logging
 # from asyncio import WindowsSelectorEventLoopPolicy
-from aiogram import types
+from aiogram.fsm.storage.redis import RedisStorage
 from aiogram import Bot, Dispatcher
 from setup_dispatcher import setup_dispatcher
 import config
@@ -13,7 +13,7 @@ logging.basicConfig(level=logging.INFO)
 
 bot = Bot(token=config.BOT_TOKEN)
 # asyncio.set_event_loop_policy(WindowsSelectorEventLoopPolicy())
-dp = Dispatcher()
+dp = Dispatcher(storage=RedisStorage.from_url(config.REDIS_URL))
 
 TTLCacheAlbumMiddleware(router=dp)
 async def create_metadata():
@@ -21,8 +21,8 @@ async def create_metadata():
         await conn.run_sync(SqlAlchemyBase.metadata.create_all)
 # @dp.message()
 # async def faq(message: types.Message):
-#
-#     await message.answer(str(message.caption))
+# 
+#     await message.answer(message.video.file_id)
 
 async def main():
     await setup_dispatcher(dp)

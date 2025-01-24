@@ -7,6 +7,7 @@ from aiogram.fsm.context import FSMContext
 from .fsm import GetBonus
 from config import ADMINS_CHAT_ID, NEW_TOPIC_ID
 from keyboards.all_keyboards import cancel, approve_or_decline_subscription, menu
+import json
 router = Router()
 
 
@@ -24,7 +25,8 @@ async def fetch_requisite(message: AlbumMessage, state: FSMContext):
         if m.content_type != 'photo':
             await message.answer('Пожалуйста, пришлите только скриншоты. Другие медиа не принимаются.')
             return
-        media_group.append(types.InputMediaPhoto(media=m.photo[-1].file_id))
+        media_group.append({"media":m.photo[-1].file_id, "type": "photo"})
+        types.InputMediaPhoto.model_dump_json()
     await message.answer('Отлично! Для оформления нам потребуется некоторые ваши данные. Пришлите нам реквизиты по которым мы можем начислить бонус\n\n'
                          '‼️ОБЯЗАТЕЛЬНО укажите банк.\n\n'
                          'В случае отсутствия банка, мы вынуждены отказать.' , reply_markup=cancel())

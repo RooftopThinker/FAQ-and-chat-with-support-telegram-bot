@@ -75,8 +75,9 @@ async def delete(session: AsyncSession, bot: Bot, thread: Thread, user_id: int):
 
 
 async def create_topic_for_user(session: AsyncSession, bot: Bot, user_id: int):
-    request = sqlalchemy.select(User).filter(User.telegram_id == user_id)
-    user: User = list(await session.scalars(request))[0]
+    user = await get_user(user_id, session, bot)
+    if not user:
+        return
     topic = await bot.create_forum_topic(chat_id=ADMINS_CHAT_ID, name=f'❌ОТКРЫТАЯ проблема {user_id}')
     msg_text = ('Новое обращение по проблеме:'
                 f'Username: {user.telegram_username}\n'
@@ -88,3 +89,14 @@ async def create_topic_for_user(session: AsyncSession, bot: Bot, user_id: int):
     session.add(Thread(by_user=user_id, name=topic.name, message_thread_id=topic.message_thread_id))
     await session.commit()
     return topic
+
+
+async def get_user(user_id, session, bot: Bot):
+    user = None
+    try:
+        request = sqlalchemy.select(User).filter(User.telegram_id == user_id)
+        user: User = list(await session.scalars(request))[0]
+    except IndexError:
+        await bot.send_message(chat_id=user_id, text='Сначала нужно пройти регистрацию в боте!'
+                                                     ' Пожалуйста, напишите /start')
+    return user
