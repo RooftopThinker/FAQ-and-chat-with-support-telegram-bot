@@ -26,7 +26,7 @@ async def fetch_requisite(message: AlbumMessage, state: FSMContext):
             await message.answer('Пожалуйста, пришлите только скриншоты. Другие медиа не принимаются.')
             return
         media_group.append({"media":m.photo[-1].file_id, "type": "photo"})
-        types.InputMediaPhoto.model_dump_json()
+
     await message.answer('Отлично! Для оформления нам потребуется некоторые ваши данные. Пришлите нам реквизиты по которым мы можем начислить бонус\n\n'
                          '‼️ОБЯЗАТЕЛЬНО укажите банк.\n\n'
                          'В случае отсутствия банка, мы вынуждены отказать.' , reply_markup=cancel())
@@ -34,22 +34,15 @@ async def fetch_requisite(message: AlbumMessage, state: FSMContext):
     await state.update_data(media_group=media_group)
 
 @router.message(GetBonus.send_for_approval)
-async def send_for_approval(message: AlbumMessage, state: FSMContext, session: AsyncSession):
+async def send_for_approval(message: AlbumMessage, state: FSMContext, session: AsyncSession, user: User):
     data = await state.get_data()
 
-    request = sqlalchemy.select(User).filter(User.telegram_id == message.from_user.id)
-
-    try:
-        result: User = list(await session.scalars(request))[0]
-    except IndexError:
-        await message.answer('Вы не указали номер телефона! Напишите /start, чтобы завершить регистрацию')
-        return
     media_group = await message.bot.send_media_group(media=data['media_group'], chat_id=ADMINS_CHAT_ID,
                                                          message_thread_id=NEW_TOPIC_ID)
     text = ('Отправлен новый отзыв!🔝 Данные пользователя:\n'
-            f"Username: {result.telegram_username}\n"
-            f"Отображаемое имя: {result.telegram_name}\n"
-            f"Номер телефона: {result.phone}\n"
+            f"Username: {user.telegram_username}\n"
+            f"Отображаемое имя: {user.telegram_name}\n"
+            f"Номер телефона: {user.phone}\n"
             f"Реквизиты: {message.text}")
     await message.answer('Отзыв отправлен! Ожидайте одобрения', reply_markup=await menu(session, message.from_user.id))
 

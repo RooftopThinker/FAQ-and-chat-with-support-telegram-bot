@@ -1,15 +1,16 @@
 import sqlalchemy
 from aiogram import Router, types, F
 from aiogram.enums import ChatType
+from aiogram.filters import StateFilter
 from aiogram.fsm.context import FSMContext
 from sqlalchemy.ext.asyncio import AsyncSession
 from data import Thread
-from handlers.fsm import BackToTalk, Problems
-from keyboards.all_keyboards import menu, send_appeal, yes_or_no, return_to_menu
+from handlers.fsm import BackToTalk, Problems, RegisterUser
+from keyboards.all_keyboards import menu, send_appeal, yes_or_no, return_to_menu, get_phone_number
 
 router = Router()
 router.message.filter(F.chat.type == ChatType.PRIVATE)
-@router.message()
+@router.message(~StateFilter(RegisterUser.fetch_number))
 async def unendified_message(message: types.Message, session: AsyncSession, state: FSMContext):
     request = sqlalchemy.select(Thread).filter(Thread.by_user == message.from_user.id,
                                                Thread.is_open == True)
@@ -30,7 +31,10 @@ async def unendified_message(message: types.Message, session: AsyncSession, stat
     await state.set_state(Problems.problem_reported)
 
 
-
+@router.message(RegisterUser.fetch_number, F.content_type != types.ContentType.CONTACT)
+async def register_user(message: types.Message, session: AsyncSession, state: FSMContext):
+    await message.answer(text='Укажите Ваш номер для окончания регистрации',
+                         reply_markup=get_phone_number())
 
 # @router.callback_query(F.data == 'send_appeal')
 # async def send_appeal(message: types.Message):

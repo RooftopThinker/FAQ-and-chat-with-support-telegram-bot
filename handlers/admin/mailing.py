@@ -23,7 +23,7 @@ async def show_menu(callback: types.CallbackQuery, state: FSMContext):
 
 @router.message(SendMailing.approve, ~F.media_group_id)
 async def approve(message: types.Message, state: FSMContext):
-    await state.update_data(message=message)
+    await state.update_data(message_id=message.message_id, chat_id=message.chat.id)
     await message.answer('Отправить рассылку?', reply_markup=yes_or_no())
     await state.set_state(SendMailing.send_mailing)
 
@@ -38,7 +38,8 @@ async def send_mailing(callback: types.CallbackQuery, state: FSMContext, session
     await state.clear()
     for user in result:
         try:
-            await data['message'].copy_to(user.telegram_id)
+            await callback.bot.copy_message(from_chat_id=data['chat_id'], message_id=data['message_id'],
+                                            chat_id=user.telegram_id)
             await sleep(0.05)
         except TelegramForbiddenError:
             bot_blocked_counter+=1

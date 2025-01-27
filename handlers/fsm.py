@@ -2,7 +2,6 @@ from aiogram.fsm.state import State, StatesGroup
 
 class RegisterUser(StatesGroup):
     fetch_number = State()
-    check_subscription = State()
 
 
 class GetBonus(StatesGroup):

@@ -8,7 +8,7 @@ from keyboards.all_keyboards import review_approved, review_declined, admin_sugg
 from data import Appeal, Thread
 import asyncio
 from config import ADMINS_CHAT_ID, APPROVED_TOPIC_ID, DECLINED_TOPIC_ID, SLEEP_TIME
-
+from keyboards.all_keyboards import get_phone_number
 
 # async def delete_appeal_by_user_id(id, bot, session):
 #     request = sqlalchemy.select(Appeal).filter(Appeal.by_user == id, Appeal.is_review == False)
@@ -92,11 +92,11 @@ async def create_topic_for_user(session: AsyncSession, bot: Bot, user_id: int):
 
 
 async def get_user(user_id, session, bot: Bot):
-    user = None
     try:
         request = sqlalchemy.select(User).filter(User.telegram_id == user_id)
         user: User = list(await session.scalars(request))[0]
+        return user
     except IndexError:
-        await bot.send_message(chat_id=user_id, text='Сначала нужно пройти регистрацию в боте!'
-                                                     ' Пожалуйста, напишите /start')
-    return user
+        await bot.send_message(chat_id=user_id, text='Укажите Ваш номер для окончания регистрации и попробуйте ещё раз',
+                             reply_markup=get_phone_number())
+
