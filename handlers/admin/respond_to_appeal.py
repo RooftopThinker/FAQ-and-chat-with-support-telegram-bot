@@ -13,7 +13,6 @@ from ..fsm import IsProblemSolved, Problems
 from data import schedule_deletion_by_user_id
 router = Router()
 # router.message.filter(IsAdmin())
-router.message.filter(F.text)
 
 @router.message(F.chat.id == int(ADMINS_CHAT_ID), F.reply_to_message)
 async def answer_to_appeal(message: types.Message, session: AsyncSession, dispatcher: Dispatcher):

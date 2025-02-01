@@ -30,7 +30,7 @@ async def exportexcel(session: AsyncSession):
     now = datetime.now().strftime("%Y_%d_%m_%H_%M_%S")
     filename = f'exports\\{now}.xlsx'
     writer = pd.ExcelWriter(filename)
-    df.to_excel(writer, sheet_name='Участники конкурса')
+    df.to_excel(writer, sheet_name='users')
     writer.close()
     return filename
 

@@ -126,7 +126,7 @@ def return_to_menu():
 
 
 def admin_suggest_to_close_appeal(user_id):
-    buttons = [[types.InlineKeyboardButton(text='Предложить пользователю закрыть проблему',
+    buttons = [[types.InlineKeyboardButton(text=f'Предложить закрыть проблему',
                                            callback_data=f'suggest_{user_id}')]]
     keyboard = types.InlineKeyboardMarkup(inline_keyboard=buttons)
     return keyboard

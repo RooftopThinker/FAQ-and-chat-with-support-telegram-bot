@@ -83,6 +83,7 @@ async def create_topic_for_user(session: AsyncSession, bot: Bot, user_id: int):
                 f'Username: {user.telegram_username}\n'
                 f'Отображаемое имя: {user.telegram_name}\n'
                 f'Номер телефона: {user.phone}\n\n'
+                f'Telegram ID: {user.telegram_id}'
                 )
     await bot.send_message(chat_id=ADMINS_CHAT_ID, text=msg_text, reply_markup=admin_suggest_to_close_appeal(user_id),
                                                     message_thread_id=topic.message_thread_id)
